@@ -36,7 +36,8 @@ RUN apt-get install -y libpq-dev postgresql-client
 #######################################################
 
 # Install bower
-RUN npm install -g bower
+RUN npm install -g bower \
+    && ln -s /usr/bin/bower /usr/local/bin/
 
 # Install yarn
 RUN npm install -g yarn
