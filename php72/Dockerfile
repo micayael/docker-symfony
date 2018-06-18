@@ -13,7 +13,8 @@ RUN apt-get install -y \
         zip \
         unzip \
         telnet \
-        wget
+        wget \
+        mlocate
 
 #######################################################
 
