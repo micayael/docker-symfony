@@ -71,6 +71,9 @@ RUN a2enmod rewrite
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER 1
 
+ENV PROJECT_ROOT /src
 ENV APACHE_DOCUMENT_ROOT /src/public
+
+COPY 000-default.conf /etc/apache2/sites-available/
 
 WORKDIR /src
