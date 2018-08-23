@@ -1,4 +1,4 @@
-FROM php:7.1-apache
+FROM php:7.2-apache
 
 COPY php.ini /usr/local/etc/php/
 
@@ -14,15 +14,13 @@ RUN apt-get install -y \
         unzip \
         telnet \
         wget \
-        mlocate
+        mlocate \
+        gnupg
 
 #######################################################
 
-# Install php-cli
-RUN apt-get install -y php5-cli
-
 # Install nodejs, npm
-RUN curl -sL https://deb.nodesource.com/setup_4.x | bash - \
+RUN curl -sL https://deb.nodesource.com/setup_8.x | bash - \
     && apt-get install -y nodejs
 
 # Install Git
@@ -32,19 +30,16 @@ RUN apt-get install -y git
 RUN apt-get install -y mysql-client
 
 # Install PostgreSQL Client
-RUN apt-get install -y libpq-dev postgresql-client
+#RUN apt-get install -y libpq-dev postgresql-client
+RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' >  /etc/apt/sources.list.d/pgdg.list \
+    && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    && apt-get update \
+    && apt-get install -y libpq-dev postgresql-client-10
 
 #######################################################
 
-# Install bower
-RUN npm install -g bower \
-    && ln -s /usr/bin/bower /usr/local/bin/
-
 # Install yarn
 RUN npm install -g yarn
-
-# Install uglify
-RUN npm install -g uglify-js uglifycss
 
 #######################################################
 
@@ -63,27 +58,11 @@ RUN docker-php-ext-install mbstring
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer
 
-# Install php-cs-fixer
-RUN curl http://get.sensiolabs.org/php-cs-fixer.phar -o php-cs-fixer \
-    && chmod a+x php-cs-fixer \
-    && mv php-cs-fixer /usr/local/bin/php-cs-fixer
-
-# Install phpunit
-RUN curl https://phar.phpunit.de/phpunit.phar -Lo phpunit \
-    && chmod a+x phpunit \
-    && mv phpunit /usr/local/bin/phpunit
-
 #######################################################
 
 # Enable apache2 mod_rewrite
 RUN a2enmod rewrite
 
-# Link web context: http://localhost:port/dtc
-#RUN cd /var/www/html/ \
-#    && ln -s /src/web/ dtc
-
-RUN cd /var/www/ \
-    && rm -rf html \
-    && ln -s /src/web/ html
+ENV APACHE_DOCUMENT_ROOT /src/public
 
 WORKDIR /src
