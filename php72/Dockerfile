@@ -54,8 +54,8 @@ RUN docker-php-ext-install mbstring
 
 # Install intl Extension
 RUN apt-get install -y libicu-dev \
-    && docker-php-ext-install intl \
-    && apt-get install -y  libicu52  libltdl7
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl
 
 #######################################################
 
