@@ -30,7 +30,7 @@ RUN apt-get install -y git
 RUN apt-get install -y mysql-client
 
 # Install PostgreSQL Client
-#RUN apt-get install -y libpq-dev postgresql-client
+
 RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main' >  /etc/apt/sources.list.d/pgdg.list \
     && wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
     && apt-get update \
@@ -52,6 +52,11 @@ RUN docker-php-ext-install pdo_pgsql
 # Install mbstring
 RUN docker-php-ext-install mbstring
 
+# Install intl Extension
+RUN apt-get install -y libicu-dev \
+    && docker-php-ext-install intl \
+    && apt-get install -y  libicu52  libltdl7
+
 #######################################################
 
 # Install Composer
@@ -62,6 +67,9 @@ RUN curl -sS https://getcomposer.org/installer | php \
 
 # Enable apache2 mod_rewrite
 RUN a2enmod rewrite
+
+# https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
 ENV APACHE_DOCUMENT_ROOT /src/public
 
