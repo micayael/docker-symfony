@@ -15,7 +15,8 @@ RUN apt-get install -y \
         telnet \
         wget \
         mlocate \
-        gnupg
+        gnupg\
+        iputils-ping
 
 #######################################################
 
@@ -56,6 +57,14 @@ RUN docker-php-ext-install mbstring
 RUN apt-get install -y libicu-dev \
     && docker-php-ext-configure intl \
     && docker-php-ext-install intl
+
+# Install PHP zip Extensions
+RUN apt-get install -y zlib1g-dev \
+    && docker-php-ext-install zip
+
+# Install APCu
+RUN printf "\n" | pecl install apcu \
+    && docker-php-ext-enable apcu
 
 #######################################################
 
