@@ -1,0 +1,71 @@
+FROM php:7.4.10-cli-buster
+
+COPY php.ini /usr/local/etc/php/
+
+#######################################################
+
+# APT-GET UPDATE
+RUN apt-get update
+
+# Install OS utils
+RUN apt-get install -y \
+        vim \
+        zip \
+        unzip \
+        telnet \
+        wget \
+        mlocate \
+        gnupg\
+        iputils-ping
+
+#######################################################
+
+# Install Git
+RUN apt install -y git
+
+# Install MySQL Client
+RUN apt install -y mariadb-client
+
+# Install PostgreSQL Client
+RUN apt install -y libpq-dev postgresql-client-11
+
+#######################################################
+
+# Install PHP Mysql Extension
+RUN docker-php-ext-install pdo_mysql
+
+# Install PHP PostgreSQL Extension
+RUN docker-php-ext-install pdo_pgsql
+
+# Install mbstring
+RUN docker-php-ext-install mbstring
+
+# Install intl Extension
+RUN apt install -y libicu-dev \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install intl
+
+# Install PHP zip Extensions
+RUN apt install -y zlib1g-dev \
+    && docker-php-ext-install zip
+
+# Install PHP curl extension
+RUN docker-php-ext-install curl
+
+#######################################################
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php \
+    && mv composer.phar /usr/local/bin/composer
+
+#######################################################
+
+RUN wget https://get.symfony.com/cli/installer -O - | bash \
+    && mv /home/root/.symfony/bin/symfony /usr/local/bin/symfony
+
+#######################################################
+
+# https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+WORKDIR /src
