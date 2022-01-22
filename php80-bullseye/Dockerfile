@@ -20,7 +20,7 @@ RUN a2enmod rewrite
 #######################################################
 
 # Install OS utils
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt install -y \
         vim \
         zip \
         unzip \
