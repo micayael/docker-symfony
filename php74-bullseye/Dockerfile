@@ -34,7 +34,7 @@ RUN apt update && apt install -y \
 #######################################################
 
 # Install node
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
 
 # Intall yarn
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \

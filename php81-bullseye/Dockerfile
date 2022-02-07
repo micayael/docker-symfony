@@ -1,5 +1,5 @@
-FROM php:8.0-cli-bullseye
-FROM php:8.0-apache-bullseye
+FROM php:8.1-cli-bullseye
+FROM php:8.1-apache-bullseye
 
 #######################################################
 
