@@ -6,11 +6,13 @@ FROM php:8.1-apache-bullseye
 ENV COMPOSER_ALLOW_SUPERUSER 1
 ENV PROJECT_ROOT /src
 ENV APACHE_DOCUMENT_ROOT /src/public
+ENV APACHE_HTTP_PORT 80
 
 #######################################################
 
 COPY php.ini $PHP_INI_DIR
 COPY 000-default.conf /etc/apache2/sites-available/
+COPY ports.conf /etc/apache2/ports.conf
 
 #######################################################
 
@@ -53,8 +55,8 @@ RUN curl -sS https://getcomposer.org/installer | php \
 #######################################################
 
 # Install Symfony command
-RUN wget https://get.symfony.com/cli/installer -O - | bash \
-    && mv /root/.symfony/bin/symfony /usr/local/bin/symfony
+RUN curl -1sLf 'https://dl.cloudsmith.io/public/symfony/stable/setup.deb.sh' | bash \
+    && apt install symfony-cli
 
 #######################################################
 
