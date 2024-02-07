@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+docker run \
+    -d \
+    -ti \
+    --name <CONTAINER_NAME> \
+    -v ${PWD}:/src \
+    -w /src \
+    -p 9999:80 \
+    <IMAGE_NAME>
