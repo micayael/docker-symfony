@@ -5,5 +5,5 @@ docker run \
     --name <CONTAINER_NAME> \
     -v ${PWD}:/src \
     -w /src \
-    -p 9999:80 \
+    -p 9999:8080 \
     <IMAGE_NAME>

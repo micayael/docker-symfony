@@ -5,7 +5,8 @@ FROM php:8.4-apache-trixie
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV PROJECT_ROOT=/src
 ENV APACHE_DOCUMENT_ROOT=/src/public
-ENV APACHE_HTTP_PORT=80
+# 8080 para poder correr como usuario no privilegiado (puertos <1024 requieren root)
+ENV APACHE_HTTP_PORT=8080
 
 #######################################################
 
@@ -64,3 +65,14 @@ RUN install-php-extensions intl zip apcu xsl opcache pdo_mysql pdo_pgsql
 #######################################################
 
 WORKDIR /src
+
+#######################################################
+
+# Correr como no-root. Se remapea www-data a UID/GID 1000 para que los bind
+# mounts en desarrollo queden con el usuario típico del host
+RUN groupmod -g 1000 www-data \
+    && usermod -u 1000 -g 1000 www-data \
+    && mkdir -p /var/run/apache2 /var/lock/apache2 \
+    && chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 /var/www /src
+
+USER www-data
