@@ -1,4 +1,6 @@
-FROM php:8.4-apache-trixie
+# Runtime compartido: lo que necesitan por igual desarrollo y producción.
+# No lleva herramientas ni USER: de eso se ocupa cada etapa final.
+FROM php:8.4-apache-trixie AS base
 
 #######################################################
 
@@ -12,6 +14,10 @@ ENV APACHE_HTTP_PORT=8080
 
 # Versiones fijas: reconstruir esta imagen dentro de un año tiene que dar el
 # mismo software. Para actualizarlas se cambian estos ARG a propósito.
+#
+# php:8.4-apache-trixie queda a propósito sin fijar por digest: es el único
+# camino por el que llegan los parches de seguridad de PHP y Debian a todos los
+# proyectos. Quien necesite un punto fijo usa las tags fechadas publicadas.
 ARG INSTALL_PHP_EXTENSIONS_VERSION=2.11.12
 ARG INSTALL_PHP_EXTENSIONS_SHA256=7c133ae4b9490d912287188c62ea570729cfa74f0ea357e4be672ce696b4aa29
 ARG NODE_MAJOR=24
@@ -30,8 +36,51 @@ COPY security.conf /etc/apache2/conf-available/security.conf
 
 #######################################################
 
-# Enable apache2 mod_rewrite
-RUN a2enmod rewrite
+# mod_headers lo necesita security.conf para los headers de seguridad
+RUN a2enmod rewrite headers
+
+#######################################################
+
+# Install PHP extensions (handles apt/pecl dependencies automatically)
+# Se baja una release concreta y se verifica el hash antes de ejecutarla.
+RUN curl -fsSL "https://github.com/mlocati/docker-php-extension-installer/releases/download/${INSTALL_PHP_EXTENSIONS_VERSION}/install-php-extensions" \
+        -o /usr/local/bin/install-php-extensions \
+    && echo "${INSTALL_PHP_EXTENSIONS_SHA256}  /usr/local/bin/install-php-extensions" | sha256sum -c - \
+    && chmod 0755 /usr/local/bin/install-php-extensions \
+    && install-php-extensions intl zip apcu xsl opcache pdo_mysql pdo_pgsql
+
+#######################################################
+
+WORKDIR /src
+
+#######################################################
+
+# Correr como no-root. Se remapea www-data a UID/GID 1000 para que los bind
+# mounts en desarrollo queden con el usuario típico del host
+RUN groupmod -g 1000 www-data \
+    && usermod -u 1000 -g 1000 www-data \
+    && mkdir -p /var/run/apache2 /var/lock/apache2 "$COREPACK_HOME" \
+    && chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 /var/www /src "$COREPACK_HOME"
+
+#######################################################
+#######################################################
+
+# Imagen de producción: el runtime pelado. Sin compilador, sin gestor de
+# paquetes de PHP ni de JS, sin editor: lo que no está no lo puede usar quien
+# consiga ejecución de código. El código y el vendor los baja el proyecto.
+FROM base AS prod
+
+# En producción el código no cambia entre requests, así que revalidar el
+# timestamp de cada archivo en cada request es puro costo.
+COPY opcache-prod.ini $PHP_INI_DIR/conf.d/zz-opcache-prod.ini
+
+USER www-data
+
+#######################################################
+#######################################################
+
+# Imagen de desarrollo: la de arriba más el toolchain completo.
+FROM base AS dev
 
 #######################################################
 
@@ -63,6 +112,7 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt install -y --no-install-recommends nodejs \
     && corepack enable \
     && corepack install -g yarn@1 \
+    && chown -R www-data:www-data "$COREPACK_HOME" \
     && rm -rf /var/lib/apt/lists/*
 
 #######################################################
@@ -82,26 +132,5 @@ RUN curl -fsSL https://dl.cloudsmith.io/public/symfony/stable/gpg.key \
     && rm -rf /var/lib/apt/lists/*
 
 #######################################################
-
-# Install PHP extensions (handles apt/pecl dependencies automatically)
-# Se baja una release concreta y se verifica el hash antes de ejecutarla.
-RUN curl -fsSL "https://github.com/mlocati/docker-php-extension-installer/releases/download/${INSTALL_PHP_EXTENSIONS_VERSION}/install-php-extensions" \
-        -o /usr/local/bin/install-php-extensions \
-    && echo "${INSTALL_PHP_EXTENSIONS_SHA256}  /usr/local/bin/install-php-extensions" | sha256sum -c - \
-    && chmod 0755 /usr/local/bin/install-php-extensions \
-    && install-php-extensions intl zip apcu xsl opcache pdo_mysql pdo_pgsql
-
-#######################################################
-
-WORKDIR /src
-
-#######################################################
-
-# Correr como no-root. Se remapea www-data a UID/GID 1000 para que los bind
-# mounts en desarrollo queden con el usuario típico del host
-RUN groupmod -g 1000 www-data \
-    && usermod -u 1000 -g 1000 www-data \
-    && mkdir -p /var/run/apache2 /var/lock/apache2 \
-    && chown -R www-data:www-data /var/run/apache2 /var/lock/apache2 /var/log/apache2 /var/www /src "$COREPACK_HOME"
 
 USER www-data
